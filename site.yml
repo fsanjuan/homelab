@@ -6,3 +6,4 @@
   roles:
     - ssh
     - nordvpn
+    - docker
