@@ -1,0 +1,15 @@
+---
+- name: Ensure NordVPN daemon is enabled and running
+  ansible.builtin.service:
+    name: nordvpnd
+    state: started
+    enabled: true
+
+- name: Check NordVPN current settings
+  ansible.builtin.command: nordvpn settings
+  register: nordvpn_settings
+  changed_when: false
+
+- name: Enable NordVPN auto-connect
+  ansible.builtin.command: nordvpn set autoconnect on
+  when: "'Auto-connect: enabled' not in nordvpn_settings.stdout"

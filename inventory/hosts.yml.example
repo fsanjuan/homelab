@@ -1,0 +1,4 @@
+all:
+  hosts:
+    homeserver:
+      ansible_host: YOUR_MESHNET_IP_OR_HOSTNAME

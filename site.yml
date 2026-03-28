@@ -1,0 +1,8 @@
+---
+- name: Configure home server
+  hosts: all
+  become: true
+
+  roles:
+    - ssh
+    - nordvpn

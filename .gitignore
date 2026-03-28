@@ -1,0 +1,14 @@
+# Ansible inventory (contains private IPs)
+inventory/hosts.yml
+
+# Ansible
+*.retry
+.vault_pass
+*.vault_pass
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
