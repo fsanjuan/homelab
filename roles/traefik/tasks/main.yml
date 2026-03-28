@@ -1,0 +1,24 @@
+---
+- name: Create proxy Docker network
+  ansible.builtin.command: docker network create proxy
+  register: network_create
+  failed_when: network_create.rc != 0 and 'already exists' not in network_create.stderr
+  changed_when: network_create.rc == 0
+
+- name: Create Traefik directory
+  ansible.builtin.file:
+    path: /opt/traefik
+    state: directory
+    mode: '0755'
+
+- name: Copy docker-compose file
+  ansible.builtin.copy:
+    src: docker-compose.yml
+    dest: /opt/traefik/docker-compose.yml
+    mode: '0644'
+
+- name: Start Traefik
+  ansible.builtin.command:
+    cmd: docker compose up -d
+    chdir: /opt/traefik
+  changed_when: false

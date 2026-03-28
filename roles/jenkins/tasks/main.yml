@@ -11,9 +11,9 @@
     state: directory
     mode: '0755'
 
-- name: Copy docker-compose file
-  ansible.builtin.copy:
-    src: docker-compose.yml
+- name: Template docker-compose file
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
     dest: /opt/jenkins/docker-compose.yml
     mode: '0644'
   notify: Restart Jenkins

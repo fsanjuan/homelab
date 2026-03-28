@@ -7,4 +7,5 @@
     - ssh
     - nordvpn
     - docker
+    - traefik
     - jenkins

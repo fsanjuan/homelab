@@ -4,12 +4,22 @@ services:
     restart: unless-stopped
     environment:
       - JAVA_OPTS=-Djenkins.install.runSetupWizard=false
+      - JENKINS_OPTS=--prefix=/jenkins
     ports:
-      - "8080:8080"
       - "50000:50000"
     volumes:
       - jenkins_home:/var/jenkins_home
       - /opt/jenkins/init.groovy.d:/var/jenkins_home/init.groovy.d
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jenkins.rule=Host(`{{ meshnet_hostname }}`) && PathPrefix(`/jenkins`)"
+      - "traefik.http.services.jenkins.loadbalancer.server.port=8080"
+    networks:
+      - proxy
 
 volumes:
   jenkins_home:
+
+networks:
+  proxy:
+    external: true
