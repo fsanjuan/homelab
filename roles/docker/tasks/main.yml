@@ -37,8 +37,8 @@
     state: started
     enabled: true
 
-- name: Add felix to docker group
+- name: Add build to docker group
   ansible.builtin.user:
-    name: felix
+    name: build
     groups: docker
     append: true
