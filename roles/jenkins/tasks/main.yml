@@ -1,0 +1,32 @@
+---
+- name: Create Jenkins directory
+  ansible.builtin.file:
+    path: /opt/jenkins
+    state: directory
+    mode: '0755'
+
+- name: Create Jenkins init scripts directory
+  ansible.builtin.file:
+    path: /opt/jenkins/init.groovy.d
+    state: directory
+    mode: '0755'
+
+- name: Copy docker-compose file
+  ansible.builtin.copy:
+    src: docker-compose.yml
+    dest: /opt/jenkins/docker-compose.yml
+    mode: '0644'
+  notify: Restart Jenkins
+
+- name: Template admin user init script
+  ansible.builtin.template:
+    src: admin-user.groovy.j2
+    dest: /opt/jenkins/init.groovy.d/admin-user.groovy
+    mode: '0644'
+  notify: Restart Jenkins
+
+- name: Start Jenkins
+  ansible.builtin.command:
+    cmd: docker compose up -d
+    chdir: /opt/jenkins
+  changed_when: false
