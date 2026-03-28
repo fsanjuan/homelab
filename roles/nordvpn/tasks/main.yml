@@ -5,11 +5,24 @@
     state: started
     enabled: true
 
-- name: Check NordVPN current settings
+- name: Check NordVPN connection status
+  ansible.builtin.command: nordvpn status
+  register: nordvpn_status
+  changed_when: false
+
+- name: Disconnect VPN (meshnet only, no VPN tunnel)
+  ansible.builtin.command: nordvpn disconnect
+  when: "'Connected' in nordvpn_status.stdout"
+
+- name: Check NordVPN settings
   ansible.builtin.command: nordvpn settings
   register: nordvpn_settings
   changed_when: false
 
-- name: Enable NordVPN auto-connect
-  ansible.builtin.command: nordvpn set autoconnect on
-  when: "'Auto-connect: enabled' not in nordvpn_settings.stdout"
+- name: Disable VPN auto-connect
+  ansible.builtin.command: nordvpn set autoconnect off
+  when: "'Auto-connect: enabled' in nordvpn_settings.stdout"
+
+- name: Enable meshnet
+  ansible.builtin.command: nordvpn set meshnet on
+  when: "'Meshnet: enabled' not in nordvpn_settings.stdout"
