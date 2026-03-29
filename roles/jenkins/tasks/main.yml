@@ -5,12 +5,6 @@
     state: directory
     mode: '0755'
 
-- name: Create Jenkins init scripts directory
-  ansible.builtin.file:
-    path: /opt/jenkins/init.groovy.d
-    state: directory
-    mode: '0755'
-
 - name: Copy Dockerfile
   ansible.builtin.copy:
     src: Dockerfile
@@ -41,10 +35,10 @@
     mode: '0644'
   notify: Restart Jenkins
 
-- name: Template admin user init script
+- name: Template JCasC config
   ansible.builtin.template:
-    src: admin-user.groovy.j2
-    dest: /opt/jenkins/init.groovy.d/admin-user.groovy
+    src: casc.yml.j2
+    dest: /opt/jenkins/casc.yml
     mode: '0644'
   notify: Restart Jenkins
 

@@ -5,11 +5,12 @@ services:
     environment:
       - JAVA_OPTS=-Djenkins.install.runSetupWizard=false
       - JENKINS_OPTS=--prefix=/jenkins
+      - CASC_JENKINS_CONFIG=/var/jenkins_home/casc.yml
     ports:
       - "50000:50000"
     volumes:
       - jenkins_home:/var/jenkins_home
-      - /opt/jenkins/init.groovy.d:/var/jenkins_home/init.groovy.d
+      - /opt/jenkins/casc.yml:/var/jenkins_home/casc.yml:ro
       - /var/run/docker.sock:/var/run/docker.sock
     group_add:
       - "{{ docker_gid }}"
