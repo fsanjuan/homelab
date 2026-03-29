@@ -11,6 +11,29 @@
     state: directory
     mode: '0755'
 
+- name: Copy Dockerfile
+  ansible.builtin.copy:
+    src: Dockerfile
+    dest: /opt/jenkins/Dockerfile
+    mode: '0644'
+  notify: Restart Jenkins
+
+- name: Copy plugins list
+  ansible.builtin.copy:
+    src: plugins.txt
+    dest: /opt/jenkins/plugins.txt
+    mode: '0644'
+  notify: Restart Jenkins
+
+- name: Get Docker group GID
+  ansible.builtin.command: getent group docker
+  register: docker_group_info
+  changed_when: false
+
+- name: Set Docker GID fact
+  ansible.builtin.set_fact:
+    docker_gid: "{{ docker_group_info.stdout.split(':')[2] }}"
+
 - name: Template docker-compose file
   ansible.builtin.template:
     src: docker-compose.yml.j2
@@ -25,8 +48,8 @@
     mode: '0644'
   notify: Restart Jenkins
 
-- name: Start Jenkins
+- name: Build and start Jenkins
   ansible.builtin.command:
-    cmd: docker compose up -d
+    cmd: docker compose up -d --build
     chdir: /opt/jenkins
   changed_when: false

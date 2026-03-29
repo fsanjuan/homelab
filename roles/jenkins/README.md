@@ -1,15 +1,35 @@
 # Role: jenkins
 
-Runs a Jenkins LTS server as a Docker container with an admin user pre-configured.
+Runs a Jenkins LTS server as a Docker container with Docker Pipeline support for containerised builds.
 
 ## What it does
 
-- Creates `/opt/jenkins` to hold the compose file and init scripts
-- Deploys a `docker-compose.yml` with Jenkins LTS
+- Builds a custom Jenkins image with the Docker CLI and `docker-workflow` plugin pre-installed
+- Mounts the host Docker socket so Jenkins can spin up build agent containers
+- Adds Jenkins to the host Docker group so socket access works without root
 - Disables the Jenkins setup wizard
 - Creates the `pellegrini` admin user via a Groovy init script
-- Starts the Jenkins container with a persistent volume for all data
+- Starts Jenkins behind Traefik at `/jenkins`
 - Restarts Jenkins if the config or init scripts change
+
+## Docker Pipeline
+
+Pipelines declare their own build environment using public Docker Hub images:
+
+```groovy
+pipeline {
+    agent { docker { image 'node:20' } }
+    stages {
+        stage('Build') {
+            steps {
+                sh 'npm install && npm run build'
+            }
+        }
+    }
+}
+```
+
+Jenkins pulls the image on first use and spins up a container for each build. No agent configuration needed in Jenkins UI.
 
 ## Prerequisites
 
@@ -31,11 +51,10 @@ ansible-playbook site.yml --ask-become-pass --ask-vault-pass
 
 ## Accessing Jenkins
 
-Once running, open `http://<server-meshnet-ip>:8080` and log in with `pellegrini` and your vaulted password.
+Once running, open `https://<your-meshnet-hostname>/jenkins` and log in with `pellegrini` and your vaulted password.
 
 ## Ports
 
 | Port  | Purpose             |
 |-------|---------------------|
-| 8080  | Web UI              |
 | 50000 | Agent communication |
