@@ -11,6 +11,30 @@
     state: directory
     mode: '0755'
 
+- name: Create Traefik certs directory
+  ansible.builtin.file:
+    path: /opt/traefik/certs
+    state: directory
+    mode: '0700'
+
+- name: Copy TLS certificate
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/certs/cert.pem"
+    dest: /opt/traefik/certs/cert.pem
+    mode: '0600'
+
+- name: Copy TLS key
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/certs/key.pem"
+    dest: /opt/traefik/certs/key.pem
+    mode: '0600'
+
+- name: Copy dynamic config
+  ansible.builtin.copy:
+    src: dynamic.yml
+    dest: /opt/traefik/dynamic.yml
+    mode: '0644'
+
 - name: Copy docker-compose file
   ansible.builtin.copy:
     src: docker-compose.yml

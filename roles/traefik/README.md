@@ -1,13 +1,29 @@
 # Role: traefik
 
-Runs Traefik as a reverse proxy for all Docker services, routing by path.
+Runs Traefik as a reverse proxy for all Docker services, with HTTPS via mkcert.
 
 ## What it does
 
 - Creates a shared `proxy` Docker network used by all proxied services
-- Deploys Traefik v3.0 listening on port 80
+- Deploys Traefik v2.11 listening on ports 80 and 443
+- Redirects all HTTP traffic to HTTPS automatically
+- Serves a mkcert-issued TLS certificate for the meshnet hostname
 - Auto-discovers containers via Docker labels
-- Routes requests to the correct service based on hostname and path
+
+## Prerequisites
+
+Generate a local certificate with mkcert on your laptop before running the playbook:
+
+```bash
+brew install mkcert
+mkcert -install
+mkcert <your-meshnet-hostname>
+mkdir -p certs
+mv <your-meshnet-hostname>.pem certs/cert.pem
+mv <your-meshnet-hostname>-key.pem certs/key.pem
+```
+
+The `certs/` directory is gitignored and must exist locally before running the playbook.
 
 ## Adding a new service
 
@@ -17,6 +33,8 @@ Add these labels to the service's `docker-compose.yml`:
 labels:
   - "traefik.enable=true"
   - "traefik.http.routers.<name>.rule=Host(`{{ meshnet_hostname }}`) && PathPrefix(`/<path>`)"
+  - "traefik.http.routers.<name>.entrypoints=websecure"
+  - "traefik.http.routers.<name>.tls=true"
   - "traefik.http.services.<name>.loadbalancer.server.port=<internal-port>"
 networks:
   - proxy
@@ -28,6 +46,6 @@ networks:
 
 ## Notes
 
-- Traefik must be running before any service that depends on it
-- The `proxy` network must exist before other services start — this role creates it
+- Traefik must run before any service that depends on it
 - `meshnet_hostname` is defined in `inventory/hosts.yml`
+- Renew the mkcert certificate yearly by re-running `mkcert` and re-running the playbook

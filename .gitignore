@@ -1,6 +1,9 @@
 # Ansible inventory (contains private IPs)
 inventory/hosts.yml
 
+# TLS certificates
+certs/
+
 # Ansible
 *.retry
 .vault_pass

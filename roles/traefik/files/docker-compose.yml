@@ -4,13 +4,20 @@ services:
     restart: unless-stopped
     command:
       - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.websecure.address=:443"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--providers.docker.network=proxy"
+      - "--providers.file.filename=/etc/traefik/dynamic.yml"
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /opt/traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+      - /opt/traefik/certs:/etc/traefik/certs:ro
     networks:
       - proxy
 

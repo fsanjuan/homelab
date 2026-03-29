@@ -13,6 +13,8 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.jenkins.rule=Host(`{{ meshnet_hostname }}`) && PathPrefix(`/jenkins`)"
+      - "traefik.http.routers.jenkins.entrypoints=websecure"
+      - "traefik.http.routers.jenkins.tls=true"
       - "traefik.http.services.jenkins.loadbalancer.server.port=8080"
     networks:
       - proxy
