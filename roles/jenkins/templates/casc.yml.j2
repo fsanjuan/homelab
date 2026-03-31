@@ -10,6 +10,39 @@ jenkins:
     loggedInUsersCanDoAnything:
       allowAnonymousRead: false
 
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - basicSSHUserPrivateKey:
+              scope: GLOBAL
+              id: "github-ssh-key"
+              username: "git"
+              privateKeySource:
+                directEntry:
+                  privateKey: |
+                    {{ jenkins_github_ssh_key | indent(20) }}
+
+jobs:
+  - script: >
+      freeStyleJob('seed') {
+        scm {
+          git {
+            remote {
+              url('{{ jenkins_jobs_repo_url }}')
+              credentials('github-ssh-key')
+            }
+            branch('main')
+          }
+        }
+        steps {
+          jobDsl {
+            targets('seed.groovy')
+            removedJobAction('DELETE')
+          }
+        }
+      }
+
 unclassified:
   location:
     url: "https://{{ meshnet_hostname }}/jenkins/"
