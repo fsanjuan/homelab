@@ -1,0 +1,24 @@
+---
+- name: Create monitoring directory
+  ansible.builtin.file:
+    path: /opt/monitoring
+    state: directory
+    mode: '0755'
+
+- name: Copy Prometheus config
+  ansible.builtin.copy:
+    src: prometheus.yml
+    dest: /opt/monitoring/prometheus.yml
+    mode: '0644'
+
+- name: Template docker-compose file
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: /opt/monitoring/docker-compose.yml
+    mode: '0644'
+
+- name: Start monitoring stack
+  ansible.builtin.command:
+    cmd: docker compose up -d
+    chdir: /opt/monitoring
+  changed_when: false

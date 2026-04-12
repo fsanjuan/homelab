@@ -9,6 +9,7 @@ Ansible project to configure a Ubuntu home server accessible via NordVPN Meshnet
 - **Docker** — installs Docker Engine, Compose, and Buildx; adds the `build` user to the docker group
 - **Traefik** — reverse proxy with HTTPS via mkcert self-signed certificate; all HTTP redirected to HTTPS
 - **Jenkins** — CI server accessible at `https://<meshnet-hostname>/jenkins`, configured via JCasC, with Docker Pipeline support for containerised builds
+- **Monitoring** — cAdvisor + Prometheus + Grafana stack; Grafana accessible at `https://<meshnet-hostname>/grafana` with per-container CPU, memory, network, and disk metrics
 
 ## Prerequisites
 
@@ -61,6 +62,15 @@ jenkins_admin_password: your_password_here
 ```bash
 ansible-playbook site.yml --ask-become-pass --ask-vault-pass
 ```
+
+## Setting up Grafana
+
+On first login at `https://<meshnet-hostname>/grafana` (default credentials `admin`/`admin`):
+
+1. Add a Prometheus data source with URL `http://prometheus:9090`
+2. Import dashboard ID **14282** from grafana.com for per-container metrics
+
+Grafana state (users, dashboards, data sources) is persisted in a Docker named volume (`monitoring_grafana_data`) and survives container restarts.
 
 ## Updating Jenkins plugins
 
