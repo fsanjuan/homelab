@@ -1,0 +1,6 @@
+---
+- name: Restart Grafana
+  ansible.builtin.command:
+    cmd: docker compose restart grafana
+    chdir: /opt/monitoring
+  changed_when: false

@@ -5,11 +5,24 @@
     state: directory
     mode: '0755'
 
+- name: Create Grafana provisioning directory
+  ansible.builtin.file:
+    path: /opt/monitoring/provisioning/datasources
+    state: directory
+    mode: '0755'
+
 - name: Copy Prometheus config
   ansible.builtin.copy:
     src: prometheus.yml
     dest: /opt/monitoring/prometheus.yml
     mode: '0644'
+
+- name: Copy Grafana datasource provisioning
+  ansible.builtin.copy:
+    src: datasources.yml
+    dest: /opt/monitoring/provisioning/datasources/datasources.yml
+    mode: '0644'
+  notify: Restart Grafana
 
 - name: Template docker-compose file
   ansible.builtin.template:
