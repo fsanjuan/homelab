@@ -35,6 +35,7 @@ services:
     environment:
       - GF_SERVER_ROOT_URL=https://{{ meshnet_hostname }}/grafana
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
+      - GF_SECURITY_ADMIN_PASSWORD={{ grafana_admin_password }}
     volumes:
       - grafana_data:/var/lib/grafana
     labels:
