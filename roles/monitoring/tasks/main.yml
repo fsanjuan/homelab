@@ -5,11 +5,14 @@
     state: directory
     mode: '0755'
 
-- name: Create Grafana provisioning directory
+- name: Create Grafana provisioning directories
   ansible.builtin.file:
-    path: /opt/monitoring/provisioning/datasources
+    path: "{{ item }}"
     state: directory
     mode: '0755'
+  loop:
+    - /opt/monitoring/provisioning/datasources
+    - /opt/monitoring/provisioning/dashboards
 
 - name: Copy Prometheus config
   ansible.builtin.copy:
@@ -21,6 +24,20 @@
   ansible.builtin.copy:
     src: datasources.yml
     dest: /opt/monitoring/provisioning/datasources/datasources.yml
+    mode: '0644'
+  notify: Restart Grafana
+
+- name: Copy Grafana dashboard provisioning
+  ansible.builtin.copy:
+    src: dashboards.yml
+    dest: /opt/monitoring/provisioning/dashboards/dashboards.yml
+    mode: '0644'
+  notify: Restart Grafana
+
+- name: Copy Grafana cadvisor dashboard
+  ansible.builtin.copy:
+    src: cadvisor.json
+    dest: /opt/monitoring/provisioning/dashboards/cadvisor.json
     mode: '0644'
   notify: Restart Grafana
 
