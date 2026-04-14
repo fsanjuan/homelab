@@ -1,0 +1,46 @@
+---
+- name: Create Homepage config directory
+  ansible.builtin.file:
+    path: /opt/homepage/config
+    state: directory
+    mode: '0755'
+
+- name: Template docker-compose file
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: /opt/homepage/docker-compose.yml
+    mode: '0644'
+
+- name: Template services config
+  ansible.builtin.template:
+    src: services.yaml.j2
+    dest: /opt/homepage/config/services.yaml
+    mode: '0644'
+  notify: Restart Homepage
+
+- name: Copy settings config
+  ansible.builtin.copy:
+    src: settings.yaml
+    dest: /opt/homepage/config/settings.yaml
+    mode: '0644'
+  notify: Restart Homepage
+
+- name: Copy widgets config
+  ansible.builtin.copy:
+    src: widgets.yaml
+    dest: /opt/homepage/config/widgets.yaml
+    mode: '0644'
+  notify: Restart Homepage
+
+- name: Copy bookmarks config
+  ansible.builtin.copy:
+    src: bookmarks.yaml
+    dest: /opt/homepage/config/bookmarks.yaml
+    mode: '0644'
+  notify: Restart Homepage
+
+- name: Start Homepage
+  ansible.builtin.command:
+    cmd: docker compose up -d
+    chdir: /opt/homepage
+  changed_when: false
