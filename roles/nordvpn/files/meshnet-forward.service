@@ -1,0 +1,17 @@
+[Unit]
+Description=Insert iptables ACCEPT rule for Meshnet to Docker forwarding
+# NordVPN Linux dynamically rewrites the FORWARD chain when meshnet is active,
+# inserting DROP rules labelled nordvpn-exitnode-transient that block traffic
+# from the Meshnet IP range (100.64.0.0/10) to private ranges including
+# Docker networks (172.16.0.0/12). This breaks Traefik routing because Docker's
+# DNAT rewrites incoming Meshnet connections to container IPs (172.x.x.x),
+# which then get dropped by NordVPN's rules.
+#
+# NordVPN rewrites these rules periodically (not just on restart), so hook-based
+# approaches like ExecStartPost are unreliable. This service is triggered by a
+# timer every 30 seconds to ensure the ACCEPT rule always sits above the DROP
+# rules. See: https://github.com/NordSecurity/nordvpn-linux/issues/659
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'iptables -D FORWARD -s 100.64.0.0/10 -d 172.16.0.0/12 -j ACCEPT 2>/dev/null; iptables -I FORWARD 1 -s 100.64.0.0/10 -d 172.16.0.0/12 -j ACCEPT'

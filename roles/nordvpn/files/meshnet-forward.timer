@@ -1,0 +1,35 @@
+[Unit]
+Description=Periodically ensure Meshnet to Docker iptables ACCEPT rule is in place
+# WHY THIS EXISTS
+# ==============
+# NordVPN Linux inserts DROP rules labelled nordvpn-exitnode-transient into the
+# iptables FORWARD chain whenever meshnet is active. One of these rules drops
+# all traffic from the Meshnet IP range (100.64.0.0/10) to private ranges
+# including Docker networks (172.16.0.0/12).
+#
+# This breaks Traefik: when a Meshnet client connects to a service, Docker's
+# DNAT rewrites the destination to a container IP (172.x.x.x), which then gets
+# dropped by NordVPN's rule before it reaches the container.
+#
+# WHY A TIMER AND NOT A HOOK
+# ==========================
+# NordVPN does not only insert these rules on nordvpnd restart — it rewrites the
+# FORWARD chain periodically during normal operation (approximately every 10
+# minutes based on community reports). Hook-based approaches such as
+# ExecStartPost on nordvpnd or NetworkManager dispatcher scripts only fire once
+# and cannot account for these periodic rewrites.
+#
+# A timer that runs every 30 seconds ensures the ACCEPT rule always sits above
+# NordVPN's DROP rules regardless of when NordVPN rewrites the chain. The
+# maximum downtime window is 30 seconds.
+#
+# This is a known upstream bug, open as of April 2026:
+# https://github.com/NordSecurity/nordvpn-linux/issues/659
+# https://github.com/NordSecurity/nordvpn-linux/issues/773
+
+[Timer]
+OnBootSec=30
+OnUnitActiveSec=30s
+
+[Install]
+WantedBy=timers.target
