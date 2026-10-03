@@ -84,3 +84,32 @@ To update all Jenkins plugins to their latest versions and pin them:
 ```
 
 Then re-run the playbook to rebuild the Jenkins image.
+
+## Using Docker from the laptop
+
+The laptop's Docker CLI talks to the server's Docker daemon over SSH (no TCP socket is exposed). The server only needs the `build` user in the `docker` group, which the playbook already does.
+
+### Choosing LAN or Meshnet
+
+First copy `scripts/docker.env.example` to `scripts/docker.env` (gitignored) and fill in your LAN and Meshnet hostnames.
+
+```bash
+./scripts/setup-docker.sh            # auto-detect
+./scripts/setup-docker.sh lan        # force LAN
+./scripts/setup-docker.sh meshnet    # force Meshnet
+```
+
+The script creates two Docker contexts and selects one (it sets `currentContext` in `~/.docker/config.json`):
+
+| Context | Endpoint | Used when |
+|---------|----------|-----------|
+| `homelab-lan` | `ssh://build@<LAN_HOST>` | `LAN_HOST` accepts a connection on port 22 (at home) |
+| `homelab-meshnet` | `ssh://build@<MESHNET_HOST>` | otherwise (away, via NordVPN Meshnet) |
+
+Re-run it whenever you change network. The same settings can be given as `LAN_HOST`, `MESHNET_HOST` or `SERVER_USER` env vars.
+
+### Prerequisites
+
+- SSH key authentication for the `build` user (the Docker CLI shells out to `ssh`, so it must work non-interactively)
+- `LAN_HOST` must resolve on your laptop: either a DNS name or an `/etc/hosts` entry mapping the server's LAN IP to it
+- **`DOCKER_HOST` must not be set.** It overrides the selected context (the script warns if it is). Remove any `export DOCKER_HOST=...` from `~/.zshrc`.

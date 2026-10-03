@@ -1,5 +1,6 @@
-# Ansible inventory (contains private IPs)
+# Ansible inventory and docker script config (contain private hosts/IPs)
 inventory/hosts.yml
+scripts/docker.env
 
 # TLS certificates
 certs/
