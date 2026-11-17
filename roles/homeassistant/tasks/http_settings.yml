@@ -1,0 +1,69 @@
+---
+# Home Assistant keeps its HTTP settings in .storage/http as a confirmed
+# ("stable") config plus an optional unconfirmed ("pending") one, which
+# auto-reverts after 5 minutes unless confirmed in the UI. `http:` in YAML is
+# deprecated and only imported once, so it can't be used as code any more.
+#
+# The port and reverse-proxy settings must match Traefik, so the playbook
+# writes them straight into the stable slot (no confirmation dialog, no
+# revert). Every other HTTP setting is left as configured in the UI.
+
+- name: Read stored HTTP settings
+  ansible.builtin.slurp:
+    src: "{{ homeassistant_dir }}/config/.storage/http"
+  register: ha_http_store
+  failed_when: false
+
+# Built as single expressions so numbers, booleans and null keep their types
+- name: Work out required HTTP settings
+  ansible.builtin.set_fact:
+    ha_http_current: "{{ (ha_http_store.content | b64decode | from_json) if ha_http_store.content is defined else {'data': {}} }}"
+    ha_http_required: "{{ {'server_port': homeassistant_internal_port | int, 'use_x_forwarded_for': true, 'trusted_proxies': homeassistant_trusted_proxies} }}"
+
+- name: Build HTTP settings store
+  ansible.builtin.set_fact:
+    ha_http_desired: >-
+      {%- set cur = ha_http_current.data -%}
+      {#- Home Assistant's own defaults; only matter on a fresh install -#}
+      {%- set defaults = {
+            'cors_allowed_origins': ['https://cast.home-assistant.io'],
+            'login_attempts_threshold': -1,
+            'ip_ban_enabled': true,
+            'ssl_profile': 'intermediate_v6',
+            'use_x_frame_options': true,
+            'created_at': now(utc=true).strftime('%Y-%m-%dT%H:%M:%S.%f+00:00')} -%}
+      {%- set stable = defaults
+            | combine(cur.stable | default({}))
+            | combine(ha_http_required)
+            | combine({'error': none, 'error_message': none}) -%}
+      {#- Keep a pending change made in the UI (with our settings applied);
+          drop one that already failed its trial -#}
+      {%- set p = cur.pending | default(none) -%}
+      {%- set pending = none if (p is none or p.error is not none) else (p | combine(ha_http_required)) -%}
+      {{ {'version': 3, 'minor_version': 1, 'key': 'http',
+          'data': {'stable': stable, 'pending': pending, 'yaml_migration_done': true}} }}
+
+- name: Check whether HTTP settings need fixing
+  ansible.builtin.set_fact:
+    ha_http_needs_update: "{{ ha_http_desired.data != ha_http_current.data }}"
+
+- name: Stop Home Assistant before changing HTTP settings
+  ansible.builtin.command:
+    cmd: docker compose stop homeassistant
+    chdir: "{{ homeassistant_dir }}"
+  when: ha_http_needs_update and ha_compose_file.stat.exists
+  changed_when: true
+
+- name: Create .storage directory
+  ansible.builtin.file:
+    path: "{{ homeassistant_dir }}/config/.storage"
+    state: directory
+    mode: '0700'
+
+# `docker compose up -d` later in main.yml starts it again
+- name: Write HTTP settings
+  ansible.builtin.copy:
+    content: "{{ ha_http_desired | to_nice_json(indent=2) }}\n"
+    dest: "{{ homeassistant_dir }}/config/.storage/http"
+    mode: '0600'
+  when: ha_http_needs_update

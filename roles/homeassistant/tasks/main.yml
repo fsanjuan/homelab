@@ -79,6 +79,9 @@
   ansible.builtin.set_fact:
     homeassistant_trusted_proxies: "{{ (proxy_network.stdout | from_json)[0].IPAM.Config | map(attribute='Subnet') | list }}"
 
+- name: Enforce HTTP settings
+  ansible.builtin.import_tasks: http_settings.yml
+
 # --- Files owned by git: overwritten on every run ---
 
 - name: Template configuration.yaml

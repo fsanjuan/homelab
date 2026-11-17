@@ -11,14 +11,9 @@ homeassistant:
   # One file per feature in packages/ (heating.yaml, ev.yaml, ...)
   packages: !include_dir_named packages
 
-http:
-  server_port: {{ homeassistant_internal_port }}
-  # Requests arrive through Traefik on the `proxy` Docker network
-  use_x_forwarded_for: true
-  trusted_proxies:
-{% for subnet in homeassistant_trusted_proxies %}
-    - {{ subnet }}
-{% endfor %}
+# No `http:` section: Home Assistant now keeps HTTP settings in .storage/http
+# (YAML is deprecated and only imported once). The port and reverse-proxy
+# settings are enforced there by the playbook; see tasks/main.yml.
 
 # Automations kept in git live in automations/; ones built in the UI editor go
 # to automations.yaml (server-only, covered by backups). Move a UI automation

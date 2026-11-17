@@ -19,13 +19,18 @@ Runs [Home Assistant Container](https://www.home-assistant.io/installation/linux
 | `packages/*.yaml` | Feature config: template sensors, helpers, scripts… | **Git** (`files/config/packages/`) |
 | `automations/*.yaml` | Automations you want reviewed and versioned | **Git** (`files/config/automations/`) |
 | `automations.yaml`, `scripts.yaml`, `scenes.yaml` | Whatever you build in the UI editors | **Server** — created once, never overwritten; covered by backups |
-| `.storage/` | Integrations, devices, entities, areas, users, dashboards, location/time zone | **Server** — covered by backups |
+| `.storage/http` | HTTP server settings | **Mixed** — the playbook enforces the port (8124) and the Traefik proxy settings; everything else is set in the UI |
+| `.storage/` (the rest) | Integrations, devices, entities, areas, users, dashboards, location/time zone | **Server** — covered by backups |
 | `home-assistant_v2.db` | History | **Server** — covered by backups |
 | `matter/` | Matter server data (fabric credentials, paired devices) | **Server** — covered by backups (stored inside the config dir for that reason) |
 
 Rule of thumb: git describes *how* Home Assistant is configured; backups hold *what it has learned*. Anything set up through the UI cannot be expressed as code and is only recoverable from a backup.
 
 Removing a file from `files/config/` does not delete it on the server; delete it there too.
+
+## HTTP settings
+
+Home Assistant no longer reads `http:` from YAML (it imports it once, then ignores it), and any HTTP change made through YAML or the UI is a trial that **reverts after 5 minutes unless confirmed** in the UI. The playbook therefore writes the settings that must match Traefik (port 8124, `use_x_forwarded_for`, `trusted_proxies` = the `proxy` network) straight into `.storage/http` as the confirmed config, stopping Home Assistant if they need fixing. `SETUP_PORT` is set to the same port so a fallback to defaults never collides with Traefik on 8123.
 
 ## Secrets
 
