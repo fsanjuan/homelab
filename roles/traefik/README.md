@@ -5,7 +5,7 @@ Runs Traefik as a reverse proxy for all Docker services, with HTTPS via mkcert.
 ## What it does
 
 - Creates a shared `proxy` Docker network used by all proxied services
-- Deploys Traefik v2.11 listening on ports 80 and 443
+- Deploys Traefik v2.11 listening on ports 80, 443 and 8123 (Home Assistant)
 - Redirects all HTTP traffic to HTTPS automatically
 - Serves a mkcert-issued TLS certificate for the meshnet hostname
 - Auto-discovers containers via Docker labels
@@ -43,6 +43,10 @@ networks:
   proxy:
     external: true
 ```
+
+## Routes for host-networked services
+
+Services that can't join the `proxy` network (e.g. Home Assistant, which needs host networking) add a file-provider route to `/opt/traefik/dynamic/<name>.yml`, pointing at `http://host.docker.internal:<port>`. Traefik watches that directory, so no restart is needed. The TLS defaults live in `dynamic/tls.yml`.
 
 ## Notes
 

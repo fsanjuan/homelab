@@ -1,0 +1,26 @@
+services:
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:{{ homeassistant_version }}
+    container_name: homeassistant
+    restart: unless-stopped
+    # Host networking is needed for device discovery (mDNS/SSDP) and Matter.
+    # Traefik reaches it through host.docker.internal (see traefik dynamic config).
+    network_mode: host
+    volumes:
+      - {{ homeassistant_dir }}/config:/config
+      - /etc/localtime:/etc/localtime:ro
+      # Lets the Bluetooth integration use the host's BlueZ, if an adapter exists
+      - /run/dbus:/run/dbus:ro
+    depends_on:
+      - matter-server
+
+  matter-server:
+    image: ghcr.io/matter-js/matterjs-server:{{ matter_server_version }}
+    container_name: matter-server
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      # WebSocket API only reachable by Home Assistant on this host
+      - LISTEN_ADDRESS=127.0.0.1
+    volumes:
+      - {{ homeassistant_dir }}/matter:/data

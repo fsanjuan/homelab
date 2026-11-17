@@ -7,16 +7,24 @@ services:
       - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
       - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
       - "--entrypoints.websecure.address=:443"
+      # Home Assistant can't be served under a sub-path, so it gets its own HTTPS port
+      - "--entrypoints.homeassistant.address=:8123"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--providers.docker.network=proxy"
-      - "--providers.file.filename=/etc/traefik/dynamic.yml"
+      # Each role drops its own file-based routes into this directory
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
     ports:
       - "80:80"
       - "443:443"
+      - "8123:8123"
+    extra_hosts:
+      # Lets Traefik reach services that run with host networking (e.g. Home Assistant)
+      - "host.docker.internal:host-gateway"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /opt/traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+      - /opt/traefik/dynamic:/etc/traefik/dynamic:ro
       - /opt/traefik/certs:/etc/traefik/certs:ro
     networks:
       - proxy

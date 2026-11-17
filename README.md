@@ -11,6 +11,7 @@ Ansible project to configure a Ubuntu home server accessible via NordVPN Meshnet
 - **Jenkins** — CI server accessible at `https://<meshnet-hostname>/jenkins`, configured via JCasC, with Docker Pipeline support for containerised builds
 - **Monitoring** — cAdvisor + Prometheus + Grafana stack; Grafana accessible at `https://<meshnet-hostname>/grafana` with per-container CPU, memory, network, and disk metrics
 - **Homepage** — service dashboard accessible at `https://<meshnet-hostname>/` showing live container status for Jenkins, Grafana, and Traefik, plus host CPU, memory, and disk widgets
+- **Home Assistant** — home automation at `https://<meshnet-hostname>:8123`, with a Matter server; YAML config kept in git, everything else covered by Home Assistant backups (see [roles/homeassistant/README.md](roles/homeassistant/README.md))
 - **Samba** — SMB file share at `\\<meshnet-hostname>\music` (`/srv/music` on the server); intended for storing the iTunes/Music library
 
 ## Prerequisites
@@ -74,6 +75,16 @@ On first login at `https://<meshnet-hostname>/grafana` use the `grafana_admin_pa
 The Prometheus datasource and cAdvisor dashboard are provisioned automatically by Ansible — no manual setup needed on a fresh deployment. The dashboard is available under **Dashboards → Cadvisor exporter**.
 
 Grafana state (users, dashboards, data sources) is persisted in a Docker named volume (`monitoring_grafana_data`) and survives container restarts. If the volume is wiped, everything is reprovisioned automatically on the next playbook run.
+
+## Home Assistant
+
+Configuration-as-code, first-time setup (Matter, cloud integrations), backups and restore are documented in [roles/homeassistant/README.md](roles/homeassistant/README.md).
+
+Pull the latest backups to your laptop with:
+
+```bash
+./scripts/pull-ha-backups.sh
+```
 
 ## Updating Jenkins plugins
 

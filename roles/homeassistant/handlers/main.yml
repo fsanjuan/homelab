@@ -1,0 +1,6 @@
+---
+- name: Restart Home Assistant
+  ansible.builtin.command:
+    cmd: docker compose restart homeassistant
+    chdir: "{{ homeassistant_dir }}"
+  changed_when: false

@@ -1,0 +1,105 @@
+---
+- name: Create Home Assistant directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ homeassistant_dir }}"
+    - "{{ homeassistant_dir }}/config"
+    - "{{ homeassistant_dir }}/config/packages"
+    - "{{ homeassistant_dir }}/config/automations"
+
+# matterjs-server runs unprivileged as UID 1000
+- name: Create Matter server data directory
+  ansible.builtin.file:
+    path: "{{ homeassistant_dir }}/matter"
+    state: directory
+    owner: '1000'
+    group: '1000'
+    mode: '0755'
+
+- name: Inspect proxy Docker network
+  ansible.builtin.command: docker network inspect proxy
+  register: proxy_network
+  changed_when: false
+
+- name: Set trusted proxy subnets
+  ansible.builtin.set_fact:
+    homeassistant_trusted_proxies: "{{ (proxy_network.stdout | from_json)[0].IPAM.Config | map(attribute='Subnet') | list }}"
+
+# --- Files owned by git: overwritten on every run ---
+
+- name: Template configuration.yaml
+  ansible.builtin.template:
+    src: configuration.yaml.j2
+    dest: "{{ homeassistant_dir }}/config/configuration.yaml"
+    mode: '0644'
+  register: ha_configuration
+  notify: Restart Home Assistant
+
+- name: Template secrets.yaml
+  ansible.builtin.template:
+    src: secrets.yaml.j2
+    dest: "{{ homeassistant_dir }}/config/secrets.yaml"
+    mode: '0600'
+  register: ha_secrets
+  notify: Restart Home Assistant
+
+- name: Copy packages
+  ansible.builtin.copy:
+    src: config/packages/
+    dest: "{{ homeassistant_dir }}/config/packages/"
+    mode: '0644'
+  register: ha_packages
+  notify: Restart Home Assistant
+
+- name: Copy git-managed automations
+  ansible.builtin.copy:
+    src: config/automations/
+    dest: "{{ homeassistant_dir }}/config/automations/"
+    mode: '0644'
+  register: ha_automations
+  notify: Restart Home Assistant
+
+# --- Files owned by the UI editors: only created when missing ---
+
+- name: Create UI-managed files if missing
+  ansible.builtin.copy:
+    content: "{{ item.content }}\n"
+    dest: "{{ homeassistant_dir }}/config/{{ item.name }}"
+    mode: '0644'
+    force: false
+  loop:
+    - { name: automations.yaml, content: '[]' }
+    - { name: scripts.yaml, content: '{}' }
+    - { name: scenes.yaml, content: '[]' }
+
+# Fail the run (before restarting anything) if the YAML is invalid
+- name: Validate Home Assistant configuration
+  ansible.builtin.command:
+    cmd: >-
+      docker run --rm
+      -v {{ homeassistant_dir }}/config:/config:ro
+      ghcr.io/home-assistant/home-assistant:{{ homeassistant_version }}
+      python -m homeassistant --script check_config --config /config
+  when: ha_configuration.changed or ha_secrets.changed or ha_packages.changed or ha_automations.changed
+  changed_when: false
+
+- name: Template docker-compose file
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ homeassistant_dir }}/docker-compose.yml"
+    mode: '0644'
+
+- name: Start Home Assistant stack
+  ansible.builtin.command:
+    cmd: docker compose up -d
+    chdir: "{{ homeassistant_dir }}"
+  changed_when: false
+
+- name: Add Traefik route for Home Assistant
+  ansible.builtin.template:
+    src: traefik-homeassistant.yml.j2
+    dest: /opt/traefik/dynamic/homeassistant.yml
+    mode: '0644'

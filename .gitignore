@@ -2,6 +2,9 @@
 inventory/hosts.yml
 scripts/docker.env
 
+# Home Assistant backups pulled from the server (contain tokens and personal data)
+backups/
+
 # TLS certificates
 certs/
 

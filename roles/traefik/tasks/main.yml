@@ -29,11 +29,22 @@
     dest: /opt/traefik/certs/key.pem
     mode: '0600'
 
-- name: Copy dynamic config
+- name: Create Traefik dynamic config directory
+  ansible.builtin.file:
+    path: /opt/traefik/dynamic
+    state: directory
+    mode: '0755'
+
+- name: Copy TLS dynamic config
   ansible.builtin.copy:
-    src: dynamic.yml
-    dest: /opt/traefik/dynamic.yml
+    src: dynamic/tls.yml
+    dest: /opt/traefik/dynamic/tls.yml
     mode: '0644'
+
+- name: Remove legacy single-file dynamic config
+  ansible.builtin.file:
+    path: /opt/traefik/dynamic.yml
+    state: absent
 
 - name: Copy docker-compose file
   ansible.builtin.copy:

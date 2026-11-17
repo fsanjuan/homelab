@@ -1,0 +1,14 @@
+# {{ ansible_managed }}
+http:
+  routers:
+    homeassistant:
+      entryPoints:
+        - homeassistant
+      rule: "PathPrefix(`/`)"
+      service: homeassistant
+      tls: {}
+  services:
+    homeassistant:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:{{ homeassistant_internal_port }}"
