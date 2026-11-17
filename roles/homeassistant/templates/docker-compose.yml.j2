@@ -6,6 +6,10 @@ services:
     # Host networking is needed for device discovery (mDNS/SSDP) and Matter.
     # Traefik reaches it through host.docker.internal (see traefik dynamic config).
     network_mode: host
+    # Needed by the Bluetooth integration to manage the host adapter (hci0)
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
     volumes:
       - {{ homeassistant_dir }}/config:/config
       - /etc/localtime:/etc/localtime:ro

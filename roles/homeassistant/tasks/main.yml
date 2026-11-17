@@ -11,11 +11,28 @@
     - "{{ homeassistant_dir }}/config/automations"
 
 # Matter data used to live in {{ homeassistant_dir }}/matter, outside the
-# backed-up config dir. Move it (once) so Home Assistant backups include it.
-- name: Check for Matter data in the old location
-  ansible.builtin.stat:
-    path: "{{ homeassistant_dir }}/matter"
-  register: matter_old_dir
+# backed-up config dir. Move it (once) so Home Assistant backups include it;
+# an empty old directory is just removed.
+- name: Look for Matter data in the old location
+  ansible.builtin.find:
+    paths: "{{ homeassistant_dir }}/matter"
+    file_type: any
+    hidden: true
+  register: matter_old_files
+
+- name: Check the new Matter data location
+  ansible.builtin.find:
+    paths: "{{ homeassistant_dir }}/config/matter"
+    file_type: any
+    hidden: true
+  register: matter_new_files
+
+- name: Refuse to overwrite Matter data
+  ansible.builtin.fail:
+    msg: >-
+      Matter data exists in both {{ homeassistant_dir }}/matter and
+      {{ homeassistant_dir }}/config/matter. Keep the right one and delete the other.
+  when: matter_old_files.matched > 0 and matter_new_files.matched > 0
 
 - name: Check for an existing compose file
   ansible.builtin.stat:
@@ -26,14 +43,22 @@
   ansible.builtin.command:
     cmd: docker compose stop matter-server
     chdir: "{{ homeassistant_dir }}"
-  when: matter_old_dir.stat.exists and ha_compose_file.stat.exists
+  when: matter_old_files.matched > 0 and ha_compose_file.stat.exists
   changed_when: true
 
 - name: Move Matter data into the config directory
-  ansible.builtin.command:
-    cmd: mv {{ homeassistant_dir }}/matter {{ homeassistant_dir }}/config/matter
-    creates: "{{ homeassistant_dir }}/config/matter"
-  when: matter_old_dir.stat.exists
+  ansible.builtin.shell:
+    cmd: >-
+      rmdir {{ homeassistant_dir }}/config/matter 2>/dev/null;
+      mv {{ homeassistant_dir }}/matter {{ homeassistant_dir }}/config/matter
+  when: matter_old_files.matched > 0
+  changed_when: true
+
+- name: Remove empty old Matter directory
+  ansible.builtin.file:
+    path: "{{ homeassistant_dir }}/matter"
+    state: absent
+  when: matter_old_files.matched == 0
 
 # matterjs-server runs unprivileged as UID 1000. Recursive so ownership is
 # fixed after restoring a backup.
