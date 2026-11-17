@@ -1,0 +1,19 @@
+# {{ ansible_managed }}
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: cadvisor
+    static_configs:
+      - targets: ['cadvisor:8080']
+{% if homeassistant_api_token is defined %}
+
+  # Home Assistant runs with host networking; reached via the Docker host gateway
+  - job_name: homeassistant
+    scrape_interval: 60s
+    metrics_path: /api/prometheus
+    authorization:
+      credentials_file: /etc/prometheus/homeassistant_token
+    static_configs:
+      - targets: ['host.docker.internal:{{ homeassistant_internal_port }}']
+{% endif %}

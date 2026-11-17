@@ -8,6 +8,9 @@ services:
     volumes:
       - /opt/homepage/config:/app/config
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    extra_hosts:
+      # Home Assistant runs with host networking
+      - "host.docker.internal:host-gateway"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.homepage.rule=Host(`{{ meshnet_hostname }}`)"

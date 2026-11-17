@@ -23,4 +23,5 @@ services:
       # WebSocket API only reachable by Home Assistant on this host
       - LISTEN_ADDRESS=127.0.0.1
     volumes:
-      - {{ homeassistant_dir }}/matter:/data
+      # Inside the HA config dir so Home Assistant backups include it
+      - {{ homeassistant_dir }}/config/matter:/data

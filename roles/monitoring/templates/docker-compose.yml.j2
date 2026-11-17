@@ -21,10 +21,17 @@ services:
     restart: unless-stopped
     volumes:
       - /opt/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+{% if homeassistant_api_token is defined %}
+      - /opt/monitoring/homeassistant_token:/etc/prometheus/homeassistant_token:ro
+{% endif %}
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time={{ prometheus_retention_time }}'
+    extra_hosts:
+      # Home Assistant runs with host networking
+      - "host.docker.internal:host-gateway"
     networks:
       - proxy
 

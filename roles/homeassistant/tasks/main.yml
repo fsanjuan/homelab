@@ -10,14 +10,40 @@
     - "{{ homeassistant_dir }}/config/packages"
     - "{{ homeassistant_dir }}/config/automations"
 
-# matterjs-server runs unprivileged as UID 1000
+# Matter data used to live in {{ homeassistant_dir }}/matter, outside the
+# backed-up config dir. Move it (once) so Home Assistant backups include it.
+- name: Check for Matter data in the old location
+  ansible.builtin.stat:
+    path: "{{ homeassistant_dir }}/matter"
+  register: matter_old_dir
+
+- name: Check for an existing compose file
+  ansible.builtin.stat:
+    path: "{{ homeassistant_dir }}/docker-compose.yml"
+  register: ha_compose_file
+
+- name: Stop Matter server before moving its data
+  ansible.builtin.command:
+    cmd: docker compose stop matter-server
+    chdir: "{{ homeassistant_dir }}"
+  when: matter_old_dir.stat.exists and ha_compose_file.stat.exists
+  changed_when: true
+
+- name: Move Matter data into the config directory
+  ansible.builtin.command:
+    cmd: mv {{ homeassistant_dir }}/matter {{ homeassistant_dir }}/config/matter
+    creates: "{{ homeassistant_dir }}/config/matter"
+  when: matter_old_dir.stat.exists
+
+# matterjs-server runs unprivileged as UID 1000. Recursive so ownership is
+# fixed after restoring a backup.
 - name: Create Matter server data directory
   ansible.builtin.file:
-    path: "{{ homeassistant_dir }}/matter"
+    path: "{{ homeassistant_dir }}/config/matter"
     state: directory
     owner: '1000'
     group: '1000'
-    mode: '0755'
+    recurse: true
 
 - name: Inspect proxy Docker network
   ansible.builtin.command: docker network inspect proxy

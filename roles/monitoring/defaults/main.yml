@@ -1,0 +1,4 @@
+---
+# How long Prometheus keeps metrics (container stats and Home Assistant history).
+# The Prometheus default is 15d. Roughly a few GB for 90d on this server.
+prometheus_retention_time: 90d

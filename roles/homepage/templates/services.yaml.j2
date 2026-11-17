@@ -17,3 +17,9 @@
         icon: home-assistant
         server: my-docker
         container: homeassistant
+{% if homeassistant_api_token is defined %}
+        widget:
+          type: homeassistant
+          url: http://host.docker.internal:{{ homeassistant_internal_port }}
+          key: {{ homeassistant_api_token }}
+{% endif %}

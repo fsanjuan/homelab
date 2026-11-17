@@ -15,7 +15,7 @@
   ansible.builtin.template:
     src: services.yaml.j2
     dest: /opt/homepage/config/services.yaml
-    mode: '0644'
+    mode: '0600'
   notify: Restart Homepage
 
 - name: Copy settings config

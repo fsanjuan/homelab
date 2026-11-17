@@ -1,0 +1,10 @@
+---
+# Shared by the homeassistant, monitoring and homepage roles.
+
+# Port Home Assistant listens on (host networking). Traefik serves it over
+# HTTPS on 8123; this one is plain HTTP for Traefik, Prometheus and Homepage.
+homeassistant_internal_port: 8124
+
+# homeassistant_api_token: a long-lived access token, set in the vault (see
+# roles/homeassistant/README.md). While it's undefined, Prometheus scraping and
+# the Homepage widget are skipped.

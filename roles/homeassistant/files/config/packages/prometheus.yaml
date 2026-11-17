@@ -1,0 +1,4 @@
+# Exposes all entity states at /api/prometheus (metrics prefixed
+# `homeassistant_`). Scraped by the monitoring role's Prometheus with a
+# long-lived access token; graphed in the "Home Assistant" Grafana dashboard.
+prometheus:

@@ -9,6 +9,7 @@ Runs [Home Assistant Container](https://www.home-assistant.io/installation/linux
 - Templates `configuration.yaml` and `secrets.yaml`, and copies `packages/` and `automations/` from this role
 - Validates the configuration with `check_config` before restarting Home Assistant; a broken config fails the run and leaves the running instance alone
 - Pins image versions in `defaults/main.yml`
+- Ships two packages: `prometheus.yaml` (metrics endpoint for the monitoring stack) and `recorder.yaml` (14 days of history in Home Assistant, noisy diagnostic sensors excluded; long-term history lives in Prometheus)
 
 ## What lives where
 
@@ -20,7 +21,7 @@ Runs [Home Assistant Container](https://www.home-assistant.io/installation/linux
 | `automations.yaml`, `scripts.yaml`, `scenes.yaml` | Whatever you build in the UI editors | **Server** — created once, never overwritten; covered by backups |
 | `.storage/` | Integrations, devices, entities, areas, users, dashboards, location/time zone | **Server** — covered by backups |
 | `home-assistant_v2.db` | History | **Server** — covered by backups |
-| `/opt/homeassistant/matter` | Matter fabric credentials | **Server** — **not** in Home Assistant backups, see below |
+| `matter/` | Matter server data (fabric credentials, paired devices) | **Server** — covered by backups (stored inside the config dir for that reason) |
 
 Rule of thumb: git describes *how* Home Assistant is configured; backups hold *what it has learned*. Anything set up through the UI cannot be expressed as code and is only recoverable from a backup.
 
@@ -42,6 +43,14 @@ homeassistant_secrets:
 2. **Matter:** Settings → Devices & services → Add integration → *Matter*. Uncheck the add-on option and enter `ws://127.0.0.1:5580/ws`.
 3. Commission Matter devices with the Home Assistant mobile app (Container installs can't commission directly). For devices already paired with another ecosystem (e.g. Alexa, Google Home, Apple Home), use multi-admin: in that ecosystem's app open the device, choose to share it with another app/controller to get a pairing code, then in the Home Assistant app go to Settings → Devices → Add device → Matter and enter the code. The device keeps working in both.
 4. Cloud-based integrations (e.g. Tuya, Hive) are added through the UI under Settings → Devices & services; their credentials live in `.storage/`.
+5. **Metrics and Homepage widget:** create a long-lived access token (click your user → Security → Long-lived access tokens → Create token), add it to the vault and re-run the playbook:
+
+   ```yaml
+   # ansible-vault edit group_vars/all/vault.yml
+   homeassistant_api_token: eyJ...
+   ```
+
+   This enables the Prometheus scrape job (Grafana → Dashboards → *Home Assistant*) and the live Homepage widget. Until the token is set both are skipped.
 
 ### Matter over Thread
 
@@ -66,7 +75,7 @@ Configure in the UI: Settings → System → Backups.
   ./scripts/pull-ha-backups.sh         # into ./backups/homeassistant/ (gitignored)
   ```
 
-- Back up the Matter server data as well: `/opt/homeassistant/matter` holds the fabric credentials and is not part of Home Assistant backups. Without it, Matter devices have to be re-shared.
+- Matter server data lives in `config/matter/`, so it's included in every backup. (An older layout kept it in `/opt/homeassistant/matter`; the playbook moves it automatically.)
 
 **Never commit backups or `.storage/`** — they contain access tokens and personal data.
 
@@ -74,8 +83,8 @@ Configure in the UI: Settings → System → Backups.
 
 1. Run the playbook (creates the containers and the git-managed YAML).
 2. On the onboarding screen choose **Restore from backup**, upload the backup and enter the encryption key.
-3. Restore `/opt/homeassistant/matter` if you have a copy (stop `matter-server` first).
-4. Run the playbook again so the YAML matches git (the restore brings back the YAML as it was when the backup was taken).
+3. `docker restart matter-server` so it picks up the restored Matter data.
+4. Run the playbook again so the YAML matches git (the restore brings back the YAML as it was when the backup was taken) and Matter data ownership is fixed.
 
 ## Upgrading
 

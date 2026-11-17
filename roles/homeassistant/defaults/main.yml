@@ -6,10 +6,6 @@ matter_server_version: "1.6.0"
 
 homeassistant_dir: /opt/homeassistant
 
-# Port Home Assistant listens on (host networking). Traefik serves it over
-# HTTPS on 8123; this one is plain HTTP and only meant for Traefik.
-homeassistant_internal_port: 8124
-
 # Values written to secrets.yaml, referenced in YAML config as `!secret <key>`.
 # Define real values in the vault (group_vars/all/vault.yml), never here.
 homeassistant_secrets: {}

@@ -4,3 +4,9 @@
     cmd: docker compose restart grafana
     chdir: /opt/monitoring
   changed_when: false
+
+- name: Restart Prometheus
+  ansible.builtin.command:
+    cmd: docker compose restart prometheus
+    chdir: /opt/monitoring
+  changed_when: false
